@@ -5,6 +5,8 @@ uri = "mongodb+srv://yulianaalzate1:AW4OdQfyG4882oHa@practica1.8p0xszp.mongodb.n
 
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
+db = client["SistemaHospitalario"]
+
 
 # Send a ping to confirm a successful connection
 try:

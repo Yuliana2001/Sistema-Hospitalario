@@ -62,3 +62,8 @@ def leer_archivo(archivo):
     except Exception as e:
         print(f"Error al procesar {archivo}: {str(e)}")
         return []
+    
+# Test de la función leer_archivo
+print(leer_archivo('src/paciente3.txt'))
+print(leer_archivo('src/paciente2.csv'))
+print(leer_archivo('src/paciente1.json'))

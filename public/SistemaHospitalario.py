@@ -1,30 +1,36 @@
 from funciones import *
-from conexion import coleccion_pacientes
+from conexion import coleccion_pacientes, client, db
 import os
 # Diseñe una aplicación en Python o su lenguaje de preferencia, que simule la recepción de
 # archivos de comunicación de Dispositivos Médicos en protocolos Serial, csv y json, dichos
 # archivos deben ser procesados, es decir, extraer la información útil de estos, la cual será
 # enviada al servidor Mongodb Atlas que cada grupo configurará.
-contentJson= leer_archivo('src/paciente1.json')
-contentCsv= leer_archivo('src/paciente2.csv')
-contentTxt= leer_archivo('src/paciente3.txt')
 
-# Extraer las claves (columnas) del CSV
-listaCsvItems = list(contentCsv[0].keys())  # Asumimos que contentCsv no está vacío
-nombreColumna = listaCsvItems
+# Procesar archivos
+archivos = [
+    'src/paciente1.json',
+    'src/paciente2.csv',
+    'src/paciente3.txt'
+]
 
-# Extraer las celdas de cada fila
-listaCsvCelda = [list(fila.values()) for fila in contentCsv]
-
-
-listaPacientes =[]
-listaPacientes.extend([contentCsv[0],contentJson[0]])
-print(listaPacientes)
-if listaPacientes:
-    coleccion_pacientes.insert_many(listaPacientes)
-    print("Pacientes insertados correctamente.")
-else:
-    print("No hay pacientes para insertar.")#mandar a la base de datos
+for archivo in archivos:
+    if not os.path.exists(archivo):
+        print(f"Archivo {archivo} no encontrado")
+        continue
+        
+    print(f"\nProcesando {archivo}...")
+    datos = leer_archivo(archivo)
+    
+    if datos:
+        # Subir a MongoDB verificando duplicados por "id" (ajusta según tu estructura)
+        subir_a_mongo(datos, coleccion_pacientes, campo_clave="id")
+    else:
+        print("No se pudieron obtener datos del archivo")
+        
+# Mostrar documentos en la colección Paciente
+print("\nDocumentos en Paciente:")
+for paciente in coleccion_pacientes.find():
+    print(paciente)
 
 # La aplicación también deberá contar con una sección que permita hacer un CRUD a la base
 # de datos no relacional. El campo del documento con el cual se harán los query es el número

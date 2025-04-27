@@ -46,7 +46,8 @@ def leer_archivo(archivo):
 
         # Procesamiento para archivos CSV
         elif archivo.endswith('.csv'):
-            df = pd.read_csv(archivo, sep=None, engine='python', encoding='utf-8')
+            df = pd.read_csv(archivo, sep=None, engine='python', encoding='utf-8', dtype=str)
+            df.columns = [col.strip() for col in df.columns]  # Limpiar nombres de columnas
             df = df.where(pd.notnull(df), None)  # Convertir NaN a None
             return df.to_dict('records')  # Convertir DataFrame a lista de diccionarios
 
@@ -63,7 +64,68 @@ def leer_archivo(archivo):
         print(f"Error al procesar {archivo}: {str(e)}")
         return []
     
-# Test de la función leer_archivo
-print(leer_archivo('src/paciente3.txt'))
-print(leer_archivo('src/paciente2.csv'))
-print(leer_archivo('src/paciente1.json'))
+def subir_a_mongo(datos, coleccion, campo_clave="id"):
+    """
+    Sube datos a MongoDB verificando primero si ya existen.
+    
+    Args:
+        datos (list): Lista de diccionarios con los datos a subir
+        coleccion (pymongo.collection): Colección de MongoDB
+        campo_clave (str): Campo único para verificar duplicados
+        
+    Returns:
+        tuple: (cantidad_insertados, duplicados_encontrados)
+    """
+    if not datos:
+        print("No hay datos para subir")
+        return 0, 0
+        
+    insertados = 0
+    duplicados = 0
+    
+    for registro in datos:
+        # Verificar si el registro ya existe (usando el campo_clave)
+        if campo_clave in registro and registro[campo_clave]:
+            existe = coleccion.find_one({campo_clave: registro[campo_clave]})
+            
+            if existe:
+                print(f"Registro con {campo_clave} {registro[campo_clave]} ya existe en MongoDB")
+                duplicados += 1
+                continue
+                
+        # Insertar el registro si no existe
+        try:
+            coleccion.insert_one(registro)
+            insertados += 1
+        except Exception as e:
+            print(f"Error al insertar registro: {str(e)}")
+            
+    print(f"\nResumen:")
+    print(f"- Registros insertados: {insertados}")
+    print(f"- Registros duplicados: {duplicados}")
+    
+    return insertados, duplicados
+
+from conexion import coleccion_pacientes
+import os
+
+# Procesar archivos
+archivos = [
+    'src/paciente1.json',
+    'src/paciente2.csv',
+    'src/paciente3.txt'
+]
+
+for archivo in archivos:
+    if not os.path.exists(archivo):
+        print(f"Archivo {archivo} no encontrado")
+        continue
+        
+    print(f"\nProcesando {archivo}...")
+    datos = leer_archivo(archivo)
+    
+    if datos:
+        # Subir a MongoDB verificando duplicados por "id" (ajusta según tu estructura)
+        subir_a_mongo(datos, coleccion_pacientes, campo_clave="id")
+    else:
+        print("No se pudieron obtener datos del archivo")

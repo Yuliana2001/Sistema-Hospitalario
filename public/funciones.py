@@ -68,13 +68,11 @@ def subir_a_mongo(datos, coleccion, campo_clave="id"):
     """
     Sube datos a MongoDB verificando primero si ya existen.
     
-    Args:
-        datos (list): Lista de diccionarios con los datos a subir
-        coleccion (pymongo.collection): Colección de MongoDB
-        campo_clave (str): Campo único para verificar duplicados
+    datos (list): Lista de diccionarios con los datos a subir
+    coleccion (pymongo.collection): Colección de MongoDB
+    campo_clave (str): Campo único para verificar duplicados
         
-    Returns:
-        tuple: (cantidad_insertados, duplicados_encontrados)
+    Devuelve: (cantidad_insertados, duplicados_encontrados)
     """
     if not datos:
         print("No hay datos para subir")

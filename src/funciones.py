@@ -4,7 +4,7 @@ def leer_archivo(archivo):
     """
     Función que procesa:
     - Archivos .txt (con formato médico específico)
-    - Archivos .csv (delimitados)
+    - Archivos .csv 
     - Archivos .json
     
     Devuelve siempre una lista de diccionarios con los datos estructurados.
@@ -68,13 +68,11 @@ def subir_a_mongo(datos, coleccion, campo_clave="id"):
     """
     Sube datos a MongoDB verificando primero si ya existen.
     
-    Args:
-        datos (list): Lista de diccionarios con los datos a subir
-        coleccion (pymongo.collection): Colección de MongoDB
-        campo_clave (str): Campo único para verificar duplicados
+    datos (list): Lista de diccionarios con los datos a subir
+    coleccion (pymongo.collection): Colección de MongoDB
+    campo_clave (str): Campo único para verificar duplicados
         
-    Returns:
-        tuple: (cantidad_insertados, duplicados_encontrados)
+    Devuelve: (cantidad_insertados, duplicados_encontrados)
     """
     if not datos:
         print("No hay datos para subir")
@@ -106,26 +104,65 @@ def subir_a_mongo(datos, coleccion, campo_clave="id"):
     
     return insertados, duplicados
 
-from conexion import coleccion_pacientes
-import os
-
-# Procesar archivos
-archivos = [
-    'src/paciente1.json',
-    'src/paciente2.csv',
-    'src/paciente3.txt'
-]
-
-for archivo in archivos:
-    if not os.path.exists(archivo):
-        print(f"Archivo {archivo} no encontrado")
-        continue
-        
-    print(f"\nProcesando {archivo}...")
-    datos = leer_archivo(archivo)
-    
-    if datos:
-        # Subir a MongoDB verificando duplicados por "id" (ajusta según tu estructura)
-        subir_a_mongo(datos, coleccion_pacientes, campo_clave="id")
+def buscar(coleccion, id_paciente):
+    """Busca y devuelve la información de un paciente por id."""
+    paciente = coleccion.find_one({"id": id_paciente})
+    if paciente:
+        paciente.pop('_id', None)  # quitar el _id
+        print(f"Paciente encontrado: {paciente}")
+        return paciente
     else:
-        print("No se pudieron obtener datos del archivo")
+        print(f"No se encontró paciente con id {id_paciente}")
+        return None
+    
+def crear_o_agregar(coleccion, id_paciente, nuevos_datos):
+    """
+    Crea un paciente nuevo o agrega datos a uno existente.
+    nuevos_datos debe ser un diccionario con los campos a agregar o actualizar.
+    Ejemplo: {"name": "Nuevo Nombre", "age": 30}
+    """
+    paciente = coleccion.find_one({"id": id_paciente})
+    
+    if paciente:
+        # El paciente existe, agregamos o actualizamos los datos
+        resultado = coleccion.update_one(
+            {"id": id_paciente},
+            {"$set": nuevos_datos}
+        )
+        print(f"Datos agregados o actualizados para paciente con id {id_paciente}")
+        return resultado.modified_count
+    else:
+        # El paciente no existe, lo creamos
+        nuevos_datos["id"] = id_paciente
+        resultado = coleccion.insert_one(nuevos_datos)
+        print(f"Paciente creado con id {id_paciente}")
+        return resultado.inserted_id
+
+def actualizar(coleccion, id_actual, nuevos_datos):
+    """
+    Actualiza la información de un paciente.
+    Permite cambiar el mismo id también.
+    nuevos_datos debe ser un diccionario con los campos a actualizar.
+    Ejemplo: {"id": "1234","name": "Nuevo Nombre", "age": 30}
+    """
+    paciente = coleccion.find_one({"id": id_actual})
+    if paciente:
+        resultado = coleccion.update_one(
+            {"id": id_actual},
+            {"$set": nuevos_datos}
+        )
+        print(f"Paciente actualizado")
+        return resultado.modified_count
+    else:
+        print(f"No se encontró paciente con id {id_actual}")
+        return 0
+
+def eliminar(coleccion, id_paciente):
+    """Elimina un paciente por id."""
+    resultado = coleccion.delete_one({"id": id_paciente})
+    if resultado.deleted_count > 0:
+        print(f"Paciente con id {id_paciente} eliminado")
+        return True
+    else:
+        print(f"No se encontró paciente con id {id_paciente}")
+        return False

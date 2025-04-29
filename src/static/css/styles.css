@@ -1,0 +1,12 @@
+.botones a {
+    min-width: 220px;
+    margin: 10px;
+    font-weight: bold;
+    font-size: 18px;
+    text-align: center;
+    transition: transform 0.3s ease; 
+}
+
+.botones a:hover {
+    transform: scale(1.4);
+}

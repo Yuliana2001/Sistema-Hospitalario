@@ -8,9 +8,9 @@ import os
 
 # Procesar archivos
 archivos = [
-    'src/paciente1.json',
-    'src/paciente2.csv',
-    'src/paciente3.txt'
+    'data/paciente1.json',
+    'data/paciente2.csv',
+    'data/paciente3.txt'
 ]
 
 for archivo in archivos:
@@ -29,8 +29,11 @@ for archivo in archivos:
         
 # Mostrar documentos en la colección Paciente
 print("\nDocumentos en Paciente:")
-for paciente in coleccion_pacientes.find():
-    print(paciente)
+def paciente():
+    pacientes = list(coleccion_pacientes.find())
+    for p in pacientes:
+        p["_id"] = str(p["_id"])  # Convierte ObjectId a string
+    return pacientes
 
 # La aplicación también deberá contar con una sección que permita hacer un CRUD a la base
 # de datos no relacional. El campo del documento con el cual se harán los query es el número

@@ -10,3 +10,12 @@
 .botones a:hover {
     transform: scale(1.4);
 }
+.table-responsive {
+    max-width: 800px;            /* Limita el ancho para que no se extienda demasiado */
+    margin: 30px auto 0;         /* Centra horizontalmente y da espacio arriba */
+    overflow-x: auto;            /* Permite scroll horizontal si se desborda */
+    padding: 10px;               /* Espacio interno para que no quede tan pegado */
+    border-radius: 10px;         /* Bordes redondeados */
+    background-color: #f8f9fa;   /* Color claro de fondo para resaltar */
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Sombra suave para profundidad */
+}

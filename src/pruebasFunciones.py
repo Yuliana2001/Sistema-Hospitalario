@@ -91,12 +91,13 @@ def subir_a_mongo(datos, coleccion, campo_clave="id"):
             if existe:
                 print(f"Registro con {campo_clave} {registro[campo_clave]} ya existe en MongoDB")
                 duplicados += 1
-                continue
+                return "duplicado"
                 
         # Insertar el registro si no existe
         try:
             coleccion.insert_one(registro)
             insertados += 1
+            
         except Exception as e:
             print(f"Error al insertar registro: {str(e)}")
             

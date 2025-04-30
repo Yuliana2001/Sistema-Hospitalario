@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
 from SistemaHospitalario import paciente
 from conexion import coleccion_pacientes
-from funciones import eliminar, leer_archivo, subir_a_mongo
+from funciones import eliminar, leer_archivo, subir_a_mongo, buscar
 from werkzeug.utils import secure_filename
 import os
 
@@ -19,9 +19,34 @@ def inicio():
     
     return render_template('index.html')  
 
-@app.route('/users')
+from flask import request, render_template, flash, make_response
+
+@app.route('/users', methods=['GET', 'POST'])
 def usersHandler():
-    return jsonify({"pacientes":paciente()})
+    sujeto = None
+
+    if request.method == 'POST':
+        id_paciente = request.form.get('id')
+        sujeto = buscar(coleccion_pacientes, str(id_paciente))
+        if not sujeto:
+            flash("❌ Paciente no encontrado.", "danger")
+
+    elif request.method == 'GET' and request.args.get('descargar'):
+        id_paciente = request.args.get('id')
+        sujeto = buscar(coleccion_pacientes, str(id_paciente))
+        if not sujeto:
+            flash("❌ Paciente no encontrado para descarga.", "danger")
+            return redirect('/users')
+
+        contenido = "\n".join(f"{k}: {v}" for k, v in sujeto.items())
+        response = make_response(contenido)
+        response.headers["Content-Disposition"] = f"attachment; filename=paciente_{id_paciente}.txt"
+        response.headers["Content-Type"] = "text/plain"
+        return response
+
+    return render_template('users.html', sujeto=sujeto)
+
+
 
 @app.route('/delete', methods=['GET', 'POST'])
 def delete_patient():
@@ -30,7 +55,7 @@ def delete_patient():
         id_paciente = request.form['id']
         
         # Llamamos a la función eliminar para borrar el paciente
-        result = eliminar(coleccion_pacientes, id_paciente)
+        result = eliminar(coleccion_pacientes, str(id_paciente))
         
         if result:
             # Si el paciente fue eliminado, mostramos un mensaje de éxito
@@ -66,7 +91,6 @@ def add_patient():
         # 🔐 Asegúrate de que el directorio exista
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-        # ✅ Guardar archivo antes de procesar
         archivo.save(ruta)
 
         result = leer_archivo(ruta)
@@ -75,11 +99,22 @@ def add_patient():
             os.remove(ruta)  # Limpieza solo si el archivo no es válido
             flash("❌ No se cargó el archivo. Revisa el formato o contenido.", "danger")
         else:
-            flash("✅ Archivo cargado correctamente.", "success")
+            insertados, duplicados = subir_a_mongo(result, coleccion_pacientes, "id")
+
+            if duplicados > 0:
+                flash("❌ Archivo con ID ya existente. No se cargó.", "danger")
+                os.remove(ruta)
+            elif insertados > 0:
+                flash("✅ Archivo cargado correctamente.", "success")
+            else:
+                flash("❌ Archivo con formato inválido o sin datos.", "danger")
+            
 
     return render_template('add.html')
 
-
+@app.route('/update', methods=['GET', 'POST'])
+def update():
+    return render_template('update.html')
  
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=4000, debug=True)

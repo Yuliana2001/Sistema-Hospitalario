@@ -1,8 +1,9 @@
-from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
+from flask import Flask, jsonify, render_template, request, redirect, url_for, flash, make_response
 from SistemaHospitalario import paciente
 from conexion import coleccion_pacientes
 from funciones import eliminar, leer_archivo, subir_a_mongo, buscar
 from werkzeug.utils import secure_filename
+from datetime import datetime
 import os
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -19,7 +20,6 @@ def inicio():
     
     return render_template('index.html')  
 
-from flask import request, render_template, flash, make_response
 
 @app.route('/users', methods=['GET', 'POST'])
 def usersHandler():
@@ -38,9 +38,22 @@ def usersHandler():
             flash("❌ Paciente no encontrado para descarga.", "danger")
             return redirect('/users')
 
-        contenido = "\n".join(f"{k}: {v}" for k, v in sujeto.items())
-        response = make_response(contenido)
-        response.headers["Content-Disposition"] = f"attachment; filename=paciente_{id_paciente}.txt"
+        # Generar mensaje HL7 según los datos del paciente
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        msh = f"MSH|^~\\&|APP|CLINIC|SYSTEM|RECEIVER|{now}||ORU^R01|{id_paciente}|P|2.3"
+        pid = f"PID|1||{sujeto.get('id', '')}||{sujeto.get('last_name', '')}^{sujeto.get('name', '')}||{sujeto.get('date', '')}|{sujeto.get('gender', '')}"
+        obx_list = []
+
+        # Agregar OBX para cada medición si existe
+        for i, key in enumerate(['A1b_Area', 'F_Area', 'A1c_Area', 'P3_Area', 'A0_Area', 'S_Window_Area'], start=1):
+            if key in sujeto:
+                obx_list.append(f"OBX|{i}|NM|{key}||{sujeto[key]}|u.a.|N|||F")
+
+        hl7_message = "\n".join([msh, pid] + obx_list)
+
+        response = make_response(hl7_message)
+        response.headers["Content-Disposition"] = f"attachment; filename=paciente_{id_paciente}.hl7"
         response.headers["Content-Type"] = "text/plain"
         return response
 

@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, render_template, request, redirect, url_for, flash, make_response
 from SistemaHospitalario import paciente
 from conexion import coleccion_pacientes
-from funciones import eliminar, leer_archivo, subir_a_mongo, buscar
+from funciones import eliminar, leer_archivo, subir_a_mongo, buscar, actualizar
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
@@ -127,7 +127,49 @@ def add_patient():
 
 @app.route('/update', methods=['GET', 'POST'])
 def update():
-    return render_template('update.html')
+    paciente_actual = None
+    
+    if request.method == 'POST':
+        # Búsqueda de paciente
+        if 'buscar' in request.form:
+            id_paciente = request.form.get('id')
+            if id_paciente:
+                paciente_actual = buscar(coleccion_pacientes, str(id_paciente))
+                flash("❌ Paciente no encontrado.", "danger") if not paciente_actual else None
+        
+        # Guardar cambios (versión optimizada)
+        elif 'guardar' in request.form:
+            id_original = request.form.get('id_original')
+            if id_original:
+                # Obtener solo los campos modificados
+                paciente_original = buscar(coleccion_pacientes, id_original)
+                cambios = {}
+                
+                for campo, valor_original in paciente_original.items():
+                    if campo == '_id':
+                        continue
+                    
+                    valor_formulario = request.form.get(campo)
+                    
+                    # Convertir a string para comparación segura
+                    str_original = str(valor_original)
+                    str_formulario = str(valor_formulario) if valor_formulario is not None else None
+                    
+                    # Solo incluir en cambios si es diferente y no está vacío
+                    if str_formulario and str_formulario != str_original:
+                        cambios[campo] = valor_formulario
+                
+                if cambios:
+                    resultado = actualizar(coleccion_pacientes, id_original, cambios)
+                    if resultado > 0:
+                        flash("✅ Campos actualizados correctamente!", "success")
+                        paciente_actual = buscar(coleccion_pacientes, id_original)
+                    else:
+                        flash("⚠️ No se modificaron campos (valores idénticos)", "warning")
+                else:
+                    flash("ℹ️ No se detectaron cambios para guardar", "info")
+    
+    return render_template('update.html', paciente=paciente_actual)
  
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=4000, debug=True)

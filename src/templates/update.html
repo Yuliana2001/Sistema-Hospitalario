@@ -3,12 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Actualizar</title>
+    <title>Actualizar Paciente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
+    <style>
+        .editable-field {
+            background-color: #f8f9fa;
+            transition: background-color 0.3s;
+        }
+        .editable-field:focus {
+            background-color: #fff;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .json-field {
+            font-family: monospace;
+            min-height: 100px;
+        }
+    </style>
 </head>
 <body>
-    
+    <div class="container py-5">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert alert-{{ messages[0][0] }} mt-3">
+                    {{ messages[0][1] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="card shadow-lg p-4 rounded justify-content-center align-items-center">
+            <h2 class="text-center mb-4">Actualizar Paciente</h2>
+            
+            <!-- Formulario de búsqueda -->
+            <form action="/update" method="POST" class="w-100">
+                <div class="mb-3">
+                    <label for="id" class="form-label">ID del paciente:</label>
+                    <input type="text" id="id" name="id" class="form-control" placeholder="Ingresa el ID del paciente" required>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <button type="submit" name="buscar" class="btn btn-primary btn-lg">Buscar</button>
+                </div>
+            </form>
+
+            <!-- Formulario de actualización (solo visible si hay paciente) -->
+            {% if paciente %}
+            <form action="/update" method="POST" class="w-100 mt-4">
+                <input type="hidden" name="id_original" value="{{ paciente.id }}">
+                
+                <div class="table-responsive mt-4">
+                    <table class="table table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Campo</th>
+                                <th>Valor Actual</th>
+                                <th>Nuevo Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, value in paciente.items() %}
+                                {% if key != '_id' %}
+                                <tr>
+                                    <td class="fw-bold align-middle">{{ key }}</td>
+                                    <td class="align-middle">
+                                        {% if value is string or value is number %}
+                                            {{ value }}
+                                        {% else %}
+                                            <pre class="mb-0 text-muted small">{{ value|tojson }}</pre>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if value is mapping or value is sequence and not value is string %}
+                                            <textarea name="{{ key }}" class="form-control editable-field json-field">{{ value|tojson }}</textarea>
+                                        {% else %}
+                                            <input type="text" name="{{ key }}" value="{{ value }}" class="form-control editable-field">
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-center mt-4">
+                    <button type="submit" name="guardar" class="btn btn-success btn-lg me-3">Guardar Cambios</button>
+                    <a href="/update" class="btn btn-warning btn-lg">Cancelar</a>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+        
+        <div class="d-flex justify-content-center flex-wrap botones mt-3">
+            <a href="/" class="btn btn-secondary btn-lg">Regresar</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mejora la visualización de campos JSON
+        document.querySelectorAll('.json-field').forEach(textarea => {
+            textarea.addEventListener('focus', function() {
+                try {
+                    const obj = JSON.parse(this.value);
+                    this.value = JSON.stringify(obj, null, 2);
+                    this.rows = 8;
+                } catch (e) {
+                    // No es JSON válido, dejar como está
+                }
+            });
+            
+            textarea.addEventListener('blur', function() {
+                try {
+                    // Minimizar el JSON al salir del campo
+                    const obj = JSON.parse(this.value);
+                    this.value = JSON.stringify(obj);
+                    this.rows = 3;
+                } catch (e) {
+                    // No hacer nada si no es JSON válido
+                }
+            });
+        });
+    </script>
 </body>
 </html>

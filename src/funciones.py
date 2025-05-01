@@ -138,24 +138,40 @@ def crear_o_agregar(coleccion, id_paciente, nuevos_datos):
         print(f"Paciente creado con id {id_paciente}")
         return resultado.inserted_id
 
-def actualizar(coleccion, id_actual, nuevos_datos):
+def actualizar(coleccion, id_actual, cambios):
     """
-    Actualiza la información de un paciente.
-    Permite cambiar el mismo id también.
-    nuevos_datos debe ser un diccionario con los campos a actualizar.
-    Ejemplo: {"id": "1234","name": "Nuevo Nombre", "age": 30}
+    Actualiza solo los campos especificados en el diccionario 'cambios'
+        coleccion: Colección de MongoDB
+        id_actual: ID del paciente a actualizar
+        cambios: Diccionario con solo los campos a modificar y sus nuevos valores
+    
+    Retorna: Número de documentos modificados (0 o 1)
     """
-    paciente = coleccion.find_one({"id": id_actual})
-    if paciente:
-        resultado = coleccion.update_one(
-            {"id": id_actual},
-            {"$set": nuevos_datos}
-        )
-        print(f"Paciente actualizado")
-        return resultado.modified_count
-    else:
-        print(f"No se encontró paciente con id {id_actual}")
+    if not cambios:
+        print("No hay cambios para aplicar")
         return 0
+    
+    # Convertir valores numéricos cuando sea posible
+    cambios_convertidos = {}
+    for campo, valor in cambios.items():
+        if isinstance(valor, str):
+            try:
+                # Manejar números con coma decimal (common en CSV)
+                if ',' in valor:
+                    valor = valor.replace(',', '.')
+                cambios_convertidos[campo] = float(valor) if '.' in valor else int(valor)
+            except ValueError:
+                cambios_convertidos[campo] = valor
+        else:
+            cambios_convertidos[campo] = valor
+    
+    resultado = coleccion.update_one(
+        {"id": id_actual},
+        {"$set": cambios_convertidos}
+    )
+    
+    print(f"Campos actualizados: {list(cambios.keys())}")
+    return resultado.modified_count
 
 def eliminar(coleccion, id_paciente):
     """Elimina un paciente por id."""

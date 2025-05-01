@@ -8,9 +8,9 @@ import os
 
 # Procesar archivos
 archivos = [
-    'data/paciente1.json',
-    'data/paciente2.csv',
-    'data/paciente3.txt'
+    'src/data/paciente1.json',
+    'src/data/paciente2.csv',
+    'src/data/paciente3.txt'
 ]
 
 for archivo in archivos:

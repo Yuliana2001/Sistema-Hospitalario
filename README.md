@@ -1,3 +1,7 @@
 # Sistema hospitalario 
-<sub>Proyecto informática médica</sub>
-## utilizando el estandar HL7
+<sub>Proyecto de informática médica</sub>
+###Yuiliana Selena Alzate Palacio 
+###Dairon Alberto Montes Barrada
+###Juan Diego Cubides Ruiz
+## ¿Qué trata el proyecto?
+

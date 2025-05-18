@@ -1,8 +1,5 @@
 # Sistema hospitalario 
 <sub>Proyecto de informática médica</sub>
-### Yuiliana Selena Alzate Palacio **1000401961**
-### Dairon Alberto Montes Barrada **1001686081**
-### Juan Diego Cubides Ruiz **1057610626**
 ## ¿De qué trata el proyecto?🤔
 Se desarrolló una API para la gestión y consulta de información médica de pacientes, permitiendo buscar registros mediante su ID,
 visualizar sus datos en una interfaz web y exportarlos en formato compatible con el estándar HL7 para su interoperabilidad con otros 
